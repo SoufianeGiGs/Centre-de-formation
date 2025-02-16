@@ -113,4 +113,29 @@ public function getRegistrationStatus($formationId, Request $request)
 }
 
 
+
+public function getAllStatusesForUser($userId)
+{
+    // Get all formations
+    $allFormations = \App\Models\Formation::all();
+
+    // Get all registrations for this user
+    $registrations = \App\Models\Registration::where('user_id', $userId)->get()->keyBy('formation_id');
+
+    // Build an array of formationId => status
+    $statuses = [];
+    foreach ($allFormations as $formation) {
+        if (isset($registrations[$formation->id])) {
+            // e.g. 'pending', 'approved', 'denied'
+            $statuses[$formation->id] = $registrations[$formation->id]->status;
+        } else {
+            // If no registration found, return something like 'Register'
+            $statuses[$formation->id] = 'Register';
+        }
+    }
+
+    // Return that object as JSON
+    return response()->json($statuses);
+}
+
 }

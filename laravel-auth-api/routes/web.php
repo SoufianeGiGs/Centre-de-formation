@@ -42,11 +42,13 @@ Route::get('/formations/{id}', [FormationController::class, 'show']);
 Route::delete('/formations/{id}', [FormationController::class, 'destroy']);
 
 Route::resource('certifications', CertificationController::class);
-
+Route::post('certifications/update/{id}', [CertificationController::class, 'update']);
 
 Route::post('/formations/{formationId}/register', [RegistrationController::class, 'registerForFormation']);
 Route::post('/registrations/{registrationId}/approve', [RegistrationController::class, 'approveRegistration']);
 Route::post('/registrations/{registrationId}/deny', [RegistrationController::class, 'denyRegistration']);
 // Add this in your routes/web.php or routes/api.php
 Route::get('/formations/{formationId}/status', [RegistrationController::class, 'getRegistrationStatus']);
-
+Route::get('/formations/{formationId}/users', [FormationController::class, 'getRegisteredUsers']);
+Route::post('formations/update/{id}', [FormationController::class, 'update']);
+Route::get('/users/{userId}/formations/statuses', [RegistrationController::class, 'getAllStatusesForUser']);

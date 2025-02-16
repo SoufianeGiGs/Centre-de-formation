@@ -26,22 +26,17 @@ class FormationController extends Controller
             'price' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
-    
+
         // Handle the image upload
         if ($request->hasFile('image')) {
-            // Generate a unique file name
             $imageName = time() . '_' . $request->file('image')->getClientOriginalName();
-            
-            // Move the image to the public directory
-            $request->file('image')->move(public_path('images/'), $imageName); // Storing in public/images folder
-    
-            // Store the image path in the database (relative to the public directory)
+            $request->file('image')->move(public_path('images'), $imageName);
             $validatedData['image'] = 'images/' . $imageName;
         }
-    
+
         // Create the formation record in the database
         $formation = Formation::create($validatedData);
-    
+
         if ($formation) {
             return response()->json([
                 'message' => 'Formation created successfully',
@@ -53,10 +48,6 @@ class FormationController extends Controller
             ], 500);
         }
     }
-    
-    
-    
-
 
     // Get a specific formation
     public function show($id)
@@ -68,6 +59,44 @@ class FormationController extends Controller
         return response()->json($formation, 200);
     }
 
+    // Update an existing formation (PUT or PATCH route)
+    public function update(Request $request, $id)
+    {
+        $formation = Formation::find($id);
+        if (!$formation) {
+            return response()->json(['message' => 'Formation not found'], 404);
+        }
+
+        $validatedData = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'category' => 'required|string|max:255',
+            'instructor' => 'required|string|max:255',
+            'duration' => 'required|string|max:255',
+            'price' => 'nullable|string|max:255',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        // Handle new image if uploaded
+        if ($request->hasFile('image')) {
+            // Delete old image if it exists
+            if ($formation->image && file_exists(public_path($formation->image))) {
+                unlink(public_path($formation->image));
+            }
+            $newImageName = time() . '_' . $request->file('image')->getClientOriginalName();
+            $request->file('image')->move(public_path('images'), $newImageName);
+            $validatedData['image'] = 'images/' . $newImageName;
+        }
+
+        // Update formation
+        $formation->update($validatedData);
+
+        return response()->json([
+            'message' => 'Formation updated successfully',
+            'formation' => $formation
+        ], 200);
+    }
+
     // Delete a formation
     public function destroy($id)
     {
@@ -76,12 +105,27 @@ class FormationController extends Controller
             return response()->json(['message' => 'Formation not found'], 404);
         }
 
-        if ($formation->image) {
-            Storage::delete('public/' . $formation->image);
+        // Delete image from disk if it exists
+        if ($formation->image && file_exists(public_path($formation->image))) {
+            unlink(public_path($formation->image));
         }
 
         $formation->delete();
 
         return response()->json(['message' => 'Formation deleted successfully'], 200);
+    }
+
+    // Get the count of users registered for a given formation
+    public function getRegisteredUsers($formationId)
+    {
+        $formation = Formation::find($formationId);
+        if (!$formation) {
+            return response()->json(['message' => 'Formation not found'], 404);
+        }
+
+        // Example: If you have a "registrations" relationship
+        $userCount = $formation->registrations()->count();
+
+        return response()->json(['count' => $userCount]);
     }
 }

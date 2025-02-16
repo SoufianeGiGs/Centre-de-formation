@@ -80,7 +80,7 @@ class CertificationController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'issued_date' => 'required|date',
             'validity_period' => 'required|integer',
-            'certification_code' => 'required|string|unique:certifications',
+            'certification_code' => 'required|string|unique:certifications,certification_code,' . $id,
             'requirements' => 'nullable|string',
             'status' => 'required|in:active,expired,archived',
         ]);
