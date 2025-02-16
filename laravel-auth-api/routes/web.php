@@ -52,3 +52,7 @@ Route::get('/formations/{formationId}/status', [RegistrationController::class, '
 Route::get('/formations/{formationId}/users', [FormationController::class, 'getRegisteredUsers']);
 Route::post('formations/update/{id}', [FormationController::class, 'update']);
 Route::get('/users/{userId}/formations/statuses', [RegistrationController::class, 'getAllStatusesForUser']);
+Route::get('/registrations/pending', [RegistrationController::class, 'getPendingRegistrations']);
+Route::get('/registrations', [RegistrationController::class, 'getAllRegistrations']);
+
+

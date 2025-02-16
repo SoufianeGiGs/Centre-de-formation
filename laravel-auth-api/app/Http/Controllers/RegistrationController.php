@@ -54,10 +54,7 @@ class RegistrationController extends Controller
     
     public function approveRegistration($registrationId)
 {
-    // Only admin can approve
-    if (!auth()->user()->is_admin) {
-        return response()->json(['message' => 'You do not have permission to approve registrations'], 403);
-    }
+   
 
     // Find the registration request
     $registration = Registration::findOrFail($registrationId);
@@ -71,10 +68,7 @@ class RegistrationController extends Controller
 
 public function denyRegistration($registrationId)
 {
-    // Only admin can deny
-    if (!auth()->user()->is_admin) {
-        return response()->json(['message' => 'You do not have permission to deny registrations'], 403);
-    }
+   
 
     // Find the registration request
     $registration = Registration::findOrFail($registrationId);
@@ -136,6 +130,25 @@ public function getAllStatusesForUser($userId)
 
     // Return that object as JSON
     return response()->json($statuses);
+}
+// In RegistrationController
+public function getPendingRegistrations()
+{
+    // Eager-load 'user' and 'formation' so you can display them easily
+    $pending = Registration::with(['user', 'formation'])
+                ->where('status', 'pending')
+                ->get();
+    
+    return response()->json($pending, 200);
+}
+
+// In RegistrationController
+public function getAllRegistrations()
+{
+    // Eager-load 'user' and 'formation' so you can easily display them
+    $registrations = Registration::with(['user', 'formation'])->get();
+
+    return response()->json($registrations, 200);
 }
 
 }

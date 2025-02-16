@@ -40,7 +40,7 @@ class CertificationController extends Controller
             $imageName = time() . '_' . $request->file('image')->getClientOriginalName();
             
             // Move the image to the public/images/certifs directory
-            $imagePath = $request->file('image')->move(public_path('images/certifs'), $imageName);
+            $request->file('image')->move(public_path('images/certifs'), $imageName);
             
             // Store the relative path of the image in the database
             $validated['image'] = 'images/certifs/' . $imageName;
@@ -88,15 +88,16 @@ class CertificationController extends Controller
         // Handle the image upload if there's a new file
         if ($request->hasFile('image')) {
             // If the certification already has an image, delete it
-            if ($certification->image) {
-                Storage::delete('public/' . $certification->image);
+            if ($certification->image && file_exists(public_path($certification->image))) {
+                unlink(public_path($certification->image));
             }
 
-            // Store the new image in the public directory
-            $imagePath = $request->file('image')->store('certifs', 'public');
+            // Generate a unique name, store in public/images/certifs
+            $imageName = time().'_'.$request->file('image')->getClientOriginalName();
+            $request->file('image')->move(public_path('images/certifs'), $imageName);
 
-            // Update the image field in the database
-            $validated['image'] = $imagePath;
+            // Database path: images/certifs/filename.jpg
+            $validated['image'] = 'images/certifs/'.$imageName;
         }
 
         // Update the certification record
@@ -112,8 +113,8 @@ class CertificationController extends Controller
         $certification = Certification::findOrFail($id);
 
         // If the certification has an image, delete it
-        if ($certification->image) {
-            Storage::delete('public/' . $certification->image);
+        if ($certification->image && file_exists(public_path($certification->image))) {
+            unlink(public_path($certification->image));
         }
 
         // Delete the certification record
