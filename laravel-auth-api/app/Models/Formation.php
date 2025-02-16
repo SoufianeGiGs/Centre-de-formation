@@ -18,4 +18,10 @@ class Formation extends Model
         'price',
         'image',
     ];
+
+    public function registrations()
+{
+    return $this->hasMany(Registration::class);
+}
+
 }

@@ -4,7 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\FormationController; 
-use App\Http\Controllers\CertificationController;// ✅ Fix: Import UserController
+use App\Http\Controllers\CertificationController;
+
+use App\Http\Controllers\RegistrationController;// ✅ Fix: Import UserController
 
 // Public Routes
 Route::get('/', function () {
@@ -40,3 +42,11 @@ Route::get('/formations/{id}', [FormationController::class, 'show']);
 Route::delete('/formations/{id}', [FormationController::class, 'destroy']);
 
 Route::resource('certifications', CertificationController::class);
+
+
+Route::post('/formations/{formationId}/register', [RegistrationController::class, 'registerForFormation']);
+Route::post('/registrations/{registrationId}/approve', [RegistrationController::class, 'approveRegistration']);
+Route::post('/registrations/{registrationId}/deny', [RegistrationController::class, 'denyRegistration']);
+// Add this in your routes/web.php or routes/api.php
+Route::get('/formations/{formationId}/status', [RegistrationController::class, 'getRegistrationStatus']);
+

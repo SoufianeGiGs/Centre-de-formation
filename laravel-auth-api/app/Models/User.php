@@ -46,4 +46,11 @@ class User extends Authenticatable
     {
         return (bool) ($this->is_admin ?? false); // Default to false if null
     }
+
+
+    public function registrations()
+{
+    return $this->hasMany(Registration::class);
+}
+
 }

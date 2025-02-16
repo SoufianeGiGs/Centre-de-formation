@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '../../components/users/Navbar';
-import Sidebar from '../../components/users/SidebarUsers';
+import Sidebar from '../../components/users/SidebarUsers'; // Sidebar to show online users
 import FormationCard from '../../components/users/FormationCard';
 import CertificationCard from '../../components/users/CertificationCard';
 import Notification from '../../components/users/Notification';
@@ -16,6 +16,9 @@ const LandingPage = () => {
     const [formations, setFormations] = useState([]);
     const [certifications, setCertifications] = useState([]);
     const [users, setUsers] = useState([]); // New state for users
+
+    // Track registration status for each formation per user
+    const [registrationStatus, setRegistrationStatus] = useState({});
 
     // Fetch user data when component mounts
     useEffect(() => {
@@ -42,6 +45,26 @@ const LandingPage = () => {
             try {
                 const response = await axios.get("http://127.0.0.1:8000/formations");
                 setFormations(response.data);
+                console.log('Fetched formations:', response.data);
+
+                // Fetch registration status for each formation and user
+                const status = {};
+                for (let formation of response.data) {
+                    console.log(`Checking registration status for user ${userId} and formation ${formation.id}`);
+
+                    const registrationResponse = await axios.get(
+                        `http://127.0.0.1:8000/formations/${formation.id}/status`, {
+                            params: { user_id: userId }
+                        });
+
+                    if (registrationResponse.data.status) {
+                        status[formation.id] = registrationResponse.data.status; // Store the status from the backend
+                    } else {
+                        status[formation.id] = 'pending'; // Default to 'pending' if no status
+                    }
+                }
+                setRegistrationStatus(status);
+                localStorage.setItem('registrationStatus', JSON.stringify(status));
             } catch (error) {
                 console.error("Error fetching formations:", error);
             }
@@ -56,28 +79,58 @@ const LandingPage = () => {
             }
         };
 
-        fetchFormations();
-        fetchCertifications();
-    }, []); // Runs only once when component mounts
-
-    // Fetch users for the sidebar
-    useEffect(() => {
+        // Fetch online users
         const fetchUsers = async () => {
             try {
-                const response = await axios.get("http://127.0.0.1:8000/users");
-                setUsers(response.data); // Set the users list
+                const response = await axios.get("http://127.0.0.1:8000/users"); // Adjust this URL as needed
+                setUsers(response.data);
             } catch (error) {
                 console.error("Error fetching users:", error);
             }
         };
 
-        fetchUsers();
-    }, []);
+        fetchFormations();
+        fetchCertifications();
+        fetchUsers(); // Get the online users
+    }, [userId]); // Runs every time userId is changed
 
+    // Handle Register button click
+    const handleRegister = async (formationId) => {
+        try {
+            if (registrationStatus[formationId] === 'approved') {
+                console.log("You are already registered for this formation.");
+                return;
+            }
+
+            const response = await axios.post(`http://127.0.0.1:8000/formations/${formationId}/register`, {
+                user_id: userId, // Send the user ID as well
+            });
+
+            if (response.status === 200) {
+                setRegistrationStatus(prevState => {
+                    const updatedStatus = { ...prevState, [formationId]: 'pending' };
+                    localStorage.setItem('registrationStatus', JSON.stringify(updatedStatus));
+                    return updatedStatus;
+                });
+                console.log('Registration successful!');
+            }
+        } catch (error) {
+            if (error.response && error.response.status === 400) {
+                console.error('Error registering for the course: You are already registered!');
+                setRegistrationStatus(prevState => ({
+                    ...prevState,
+                    [formationId]: 'approved'
+                }));
+            } else {
+                console.error('Error registering for the course:', error);
+            }
+        }
+    };
+
+    // Handle course details modal
     const handleCourseClick = async (courseId) => {
         try {
-            // Fetch full details of the course (formation or certification)
-            const response = await axios.get(`http://127.0.0.1:8000/formations/${courseId}`); // Change this URL if it is certification
+            const response = await axios.get(`http://127.0.0.1:8000/formations/${courseId}`);
             setSelectedCourse(response.data);
         } catch (error) {
             console.error("Error fetching course details:", error);
@@ -92,8 +145,7 @@ const LandingPage = () => {
         <div className="user-landing-page">
             <Navbar />
             <div className="flex">
-                {/* Pass users to Sidebar */}
-                <Sidebar users={users} />
+                <Sidebar users={users} /> {/* Display online users in Sidebar */}
 
                 <main className="main-content p-8 w-full">
                     <Notification />
@@ -131,7 +183,13 @@ const LandingPage = () => {
                                 <h2 className="text-xl font-bold mb-4">Featured Formations</h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {formations.map((formation) => (
-                                        <FormationCard key={formation.id} formation={formation} onClick={() => handleCourseClick(formation.id)} />
+                                        <FormationCard
+                                            key={formation.id}
+                                            formation={formation}
+                                            registrationStatus={registrationStatus[formation.id]} // Pass status
+                                            handleCourseClick={handleCourseClick}
+                                            handleRegister={handleRegister} // Pass handleRegister function
+                                        />
                                     ))}
                                 </div>
                             </div>
@@ -140,7 +198,13 @@ const LandingPage = () => {
                                 <h2 className="text-xl font-bold mb-4">Featured Certifications</h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {certifications.map((certification) => (
-                                        <CertificationCard key={certification.id} certification={certification} onClick={() => handleCourseClick(certification.id)} />
+                                        <CertificationCard
+                                            key={certification.id}
+                                            certification={certification}
+                                            registrationStatus={registrationStatus[certification.id]} // Pass status
+                                            handleCourseClick={handleCourseClick}
+                                            handleRegister={handleRegister}
+                                        />
                                     ))}
                                 </div>
                             </div>
@@ -168,14 +232,6 @@ const LandingPage = () => {
                     )}
                 </main>
             </div>
-
-            <footer className="footer bg-yellow-400 p-4 text-white text-center">
-                <p>&copy; 2025 User Portal. All Rights Reserved.</p>
-                <div className="links">
-                    <a href="#terms" className="mr-4">Terms</a>
-                    <a href="#privacy">Privacy</a>
-                </div>
-            </footer>
         </div>
     );
 };
