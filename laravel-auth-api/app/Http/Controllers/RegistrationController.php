@@ -6,6 +6,8 @@ use App\Models\Formation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\RegistrationApproved;
 class RegistrationController extends Controller
 {
     public function registerForFormation(Request $request, $formationId)
@@ -62,6 +64,7 @@ class RegistrationController extends Controller
     // Approve the registration
     $registration->status = 'approved';
     $registration->save();
+    Mail::to($registration->user->email)->send(new RegistrationApproved($registration));
 
     return response()->json(['message' => 'Registration has been approved'], 200);
 }
