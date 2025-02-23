@@ -1,16 +1,10 @@
-# Exclude node_modules from language stats since they're external dependencies.
+
 node_modules/** linguist-vendored
 
-# Exclude any compiled assets if needed.
 public/js/** linguist-vendored
-
-# Explicitly mark PHP files
+]
 *.php linguist-language=PHP
 
-# Explicitly mark JavaScript and JSX files as JavaScript
 *.js linguist-language=JavaScript
 *.jsx linguist-language=JavaScript
 
-# Optionally, if you want to reduce the impact of your React frontend on overall stats,
-# you can mark the entire frontend directory as vendored:
-frontend/** linguist-vendored
